@@ -4,16 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Multinivel Completo</title>
+    <title>Quasys - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .sidebar-transition {
             transition: width 0.3s ease-in-out;
-        }
-
-        .menu-text {
-            transition: opacity 0.2s;
         }
 
         .collapsed .menu-text,
@@ -25,169 +21,175 @@
             width: 4rem;
         }
 
-        /* Línea guía para el tercer nivel */
         .linea-guia {
             border-left: 1px solid #475569;
             margin-left: 0.75rem;
             padding-left: 0.5rem;
         }
+
+        /* Scrollbar personalizada para el sidebar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
     </style>
 </head>
 
-<body class="bg-gray-100 font-sans overflow-hidden">
+<body class="bg-slate-50 font-sans overflow-hidden">
 
     <div class="flex h-screen">
-
         <!-- SIDEBAR -->
-        <aside id="sidebar" class="sidebar-transition w-64 bg-slate-900 text-white flex flex-col z-20">
+        <aside id="sidebar" class="sidebar-transition w-72 bg-slate-900 text-white flex flex-col z-20 shadow-2xl">
             <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
-                <span class="menu-text font-bold text-xl tracking-wider">SISTEMA</span>
-                <span class="avatar hidden sm:block ">
-                    <img class="rounded-full size-12" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSudFv7qVDKT7KUcwKSpGcRi8JWvUETCSlCrA&s" alt="">
-                </span>
-                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-800 rounded transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-900">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <span class="menu-text font-black text-xl tracking-tighter">QUASYS</span>
+                </div>
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
 
-            <nav class="flex-1 mt-4 px-3 space-y-2 overflow-y-auto">
+            <nav class="flex-1 mt-4 px-3 space-y-1 overflow-y-auto sidebar-scroll">
 
-                <!-- 1. COLABORADOR -->
-                <div>
-                    <button onclick="toggleSubmenu('menu-colaborador')" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition">
-                        <i class="fas fa-user-friends w-6"></i>
-                        <span class="menu-text ml-3 flex-1 text-left">Colaborador</span>
-                        <i class="fas fa-chevron-down text-xs menu-chevron"></i>
-                    </button>
-                    <div id="menu-colaborador" class="hidden flex flex-col mt-1 ml-4 space-y-1">
-                        <!-- Subnivel 2 -->
-                        <button onclick="toggleSubmenu('sub-perfil')" class="flex items-center justify-between p-2 text-sm text-slate-400 hover:text-white">
-                            <span>Gestión de Perfil</span>
-                            <i class="fas fa-chevron-right text-[10px]"></i>
-                        </button>
-                        <!-- Subnivel 3 -->
-                        <div id="sub-perfil" class="hidden flex flex-col linea-guia text-xs text-slate-500">
-                            <a href="#" class="py-1 hover:text-white">Datos Personales</a>
-                            <a href="#" class="py-1 hover:text-white">Seguridad</a>
-                            <a href="#" class="py-1 hover:text-white">Preferencias</a>
-                        </div>
-                    </div>
-                </div>
+                @if ($usuario['rol'] === 'admin' || $usuario['rol'] === 'calidad') 
 
-                @if ($usuario['rol'] === 'admin' OR $usuario['rol'] === 'calidad')
-                <!-- 2. GERENCIA -->
-                <div>
-                    <button onclick="toggleSubmenu('menu-gerencia')" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition">
-                        <i class="fas fa-chart-line w-6"></i>
-                        <span class="menu-text ml-3 flex-1 text-left">Gerencia</span>
-                        <i class="fas fa-chevron-down text-xs menu-chevron"></i>
+                <!-- MENU GERENCIA -->
+                <div class="pb-2">
+                    <p class="menu-text text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-4 mb-2">Operaciones</p>
+                    <button onclick="toggleSubmenu('menu-gerencia')" class="w-full flex items-center p-3 rounded-xl hover:bg-slate-800 transition group">
+                        <i class="fas fa-chart-pie w-6 text-slate-400 group-hover:text-white"></i>
+                        <span class="menu-text ml-3 flex-1 text-left text-sm font-medium">Gerencia</span>
+                        <i class="fas fa-chevron-down text-[10px] menu-chevron text-slate-500"></i>
                     </button>
                     <div id="menu-gerencia" class="hidden flex flex-col mt-1 ml-4 space-y-1">
-                        <!-- Subnivel 2 -->
-                        <button onclick="toggleSubmenu('sub-reportes')" class="flex items-center justify-between p-2 text-sm text-slate-400 hover:text-white">
-                            <span>Reportes</span>
-                            <i class="fas fa-chevron-right text-[10px]"></i>
+                        <button onclick="toggleSubmenu('ger-control')" class="flex items-center justify-between p-2 text-xs text-slate-400 hover:text-white transition">
+                            <span>Control de Documentos</span>
+                            <i class="fas fa-chevron-right text-[8px]"></i>
                         </button>
-                        <!-- Subnivel 3 -->
-                        <div id="sub-reportes" class="hidden flex flex-col linea-guia text-xs text-slate-500">
-                            <a href="#" class="py-1 hover:text-white">Ventas</a>
-                            <a href="#" class="py-1 hover:text-white">Gastos</a>
-                            <a href="#" class="py-1 hover:text-white">Proyecciones</a>
+                        <div id="ger-control" class="hidden flex flex-col linea-guia text-[11px] text-slate-500 space-y-1">
+                            <a href="#" class="py-1 hover:text-white">Solicitud de cambios</a>
+                            <a href="#" class="py-1 hover:text-white">Aprobación de solicitudes</a>
+                            <a href="#" class="py-1 hover:text-white">Revisión de solicitudes</a>
+                            <a href="#" class="py-1 hover:text-white">Consulta de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Historial de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Matriz de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Revisión de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Hoja de tarea estándar</a>
                         </div>
+                        <a href="#" class="p-2 text-xs text-slate-400 hover:text-white">Training Tracker</a>
                     </div>
                 </div>
 
-                <!-- 3. CALIDAD -->
-                <div>
-                    <button onclick="toggleSubmenu('menu-calidad')" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition">
-                        <i class="fas fa-check-circle w-6"></i>
-                        <span class="menu-text ml-3 flex-1 text-left">Calidad</span>
-                        <i class="fas fa-chevron-down text-xs menu-chevron"></i>
+                <!-- MENU CALIDAD -->
+                <div class="pb-2">
+                    <button onclick="toggleSubmenu('menu-calidad')" class="w-full flex items-center p-3 rounded-xl hover:bg-slate-800 transition group">
+                        <i class="fas fa-shield-check w-6 text-slate-400 group-hover:text-white"></i>
+                        <span class="menu-text ml-3 flex-1 text-left text-sm font-medium">Calidad</span>
+                        <i class="fas fa-chevron-down text-[10px] menu-chevron text-slate-500"></i>
                     </button>
                     <div id="menu-calidad" class="hidden flex flex-col mt-1 ml-4 space-y-1">
-                        <!-- Subnivel 2 -->
-                        @foreach ($menuCalidad as $item)
-
-                        <button onclick="toggleSubmenu('sub-auditoria')" class="flex items-center justify-between p-2 text-sm text-slate-400 hover:text-white">
-                            <span>{{ $item['nombre'] }}</span>
-                            <i class="fas fa-chevron-right text-[10px]"></i>
+                        <button onclick="toggleSubmenu('cal-control')" class="flex items-center justify-between p-2 text-xs text-slate-400 hover:text-white transition">
+                            <span>Control de Documentos</span>
+                            <i class="fas fa-chevron-right text-[8px]"></i>
                         </button>
-
-                        @endforeach
-
-
-                        <!-- Subnivel 3 -->
-
-                        <div id="sub-auditoria" class="hidden flex flex-col linea-guia text-xs text-slate-500">
-                            @foreach ($SubmenuReportes as $reporte)
-                            <a href="#" class="py-1 hover:text-white">{{ $reporte['nombre'] }}</a>
-                            @endforeach
+                        <div id="cal-control" class="hidden flex flex-col linea-guia text-[11px] text-slate-500 space-y-1">
+                            <a href="#" class="py-1 hover:text-white">Solicitud de cambios</a>
+                            <a href="#" class="py-1 hover:text-white">Aprobación de solicitudes</a>
+                            <a href="#" class="py-1 hover:text-white">Revisión de solicitudes</a>
+                            <a href="#" class="py-1 hover:text-white">Consulta de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Historial de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Matriz de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Revisión de documentos</a>
+                            <a href="#" class="py-1 hover:text-white">Hoja de tarea estándar</a>
                         </div>
+                        <a href="#" class="p-2 text-xs text-slate-400 hover:text-white">Training Tracker</a>
                     </div>
                 </div>
                 @endif
 
+                <!-- MENU ASOCIADO -->
+                <div class="pb-2">
+                    <button onclick="toggleSubmenu('menu-asociado')" class="w-full flex items-center p-3 rounded-xl hover:bg-slate-800 transition group">
+                        <i class="fas fa-user-tie w-6 text-slate-400 group-hover:text-white"></i>
+                        <span class="menu-text ml-3 flex-1 text-left text-sm font-medium">Asociado</span>
+                        <i class="fas fa-chevron-down text-[10px] menu-chevron text-slate-500"></i>
+                    </button>
+                    <div id="menu-asociado" class="hidden flex flex-col mt-1 ml-4 space-y-1">
+                        <!-- Sub-Control -->
+                        <button onclick="toggleSubmenu('asoc-control')" class="flex items-center justify-between p-2 text-xs text-slate-400 hover:text-white transition">
+                            <span>Control de Documentos</span>
+                            <i class="fas fa-chevron-right text-[8px]"></i>
+                        </button>
+                        <div id="asoc-control" class="hidden flex flex-col linea-guia text-[11px] text-slate-500 space-y-1">
+                            <a href="#" class="py-1 hover:text-white transition">Solicitud de cambios</a>
+                            <a href="#" class="py-1 hover:text-white transition">Aprobación de solicitudes de nivel superior</a>
+                            <a href="#" class="py-1 hover:text-white transition">Aprobación de solicitudes THE</a>
+                            <a href="#" class="py-1 hover:text-white transition">Estatus de solicitudes</a>
+                            <a href="#" class="py-1 hover:text-white transition">Consulta de documentos</a>
+                            <a href="#" class="py-1 hover:text-white transition">Historial de documentos</a>
+                            <a href="#" class="py-1 hover:text-white transition">Matriz de documentos</a>
+                            <a href="#" class="py-1 hover:text-white transition">Revisión de documentos</a>
+                        </div>
+                        <a href="#" class="p-2 text-xs text-slate-400 hover:text-white transition">Training Tracker</a>
+                    </div>
+                </div>
+
+
+
             </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <p class="text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                    &copy; 2026 Quasys
+                </p>
+            </div>
         </aside>
 
-        <!-- CONTENIDO PRINCIPAL -->
+        <!-- CONTENIDO -->
         <div class="flex-1 flex flex-col min-w-0">
-
-            <!-- TOP BAR -->
-            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 relative z-10">
-                <div class="relative">
-                    <button onclick="toggleUserMenu()" class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 p-2 rounded-lg transition">
-                        <div class="text-right hidden sm:block">
-                            <p class="text-sm font-semibold text-gray-700">{{ $usuario['nombre'] }}</p>
-                            <p class="text-xs text-gray-500 italic">{{ $usuario['rol'] }}</p>
-                        </div>
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode($usuario['nombre']) }}&background=0D8ABC&color=fff" class="h-9 w-9 rounded-full" alt="Avatar">
-                    </button>
-
-                    <!-- User Dropdown -->
-                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i class="fas fa-cog mr-2"></i> Settings</a>
-                        <hr class="my-1">
-                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50"><i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión</a>
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 relative z-10">
+                <div class="text-slate-400 text-sm font-medium">
+                    {{ Route::currentRouteName() }} <span class="text-slate-800 font-bold"></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold text-slate-800">{{ $usuario['nombre'] }}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{{ $usuario['rol'] }}</p>
                     </div>
+                    <img src="https://ui-avatars.com/api/?name=Ivan+Lopez&background=0f172a&color=fff" class="h-10 w-10 rounded-xl shadow-md" alt="Avatar">
                 </div>
             </header>
 
-            <!-- ESPACIO VACÍO -->
-            <main class="flex-1 p-6 bg-gray-50 overflow-y-auto">
-                <div class="h-full border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-400">
-                    Contenedor para tus pantallas
+            <main class="flex-1 p-8 overflow-y-auto">
+                <div class="h-full bg-white rounded-3xl border border-slate-200 border-dashed flex flex-col items-center justify-center text-slate-300">
+                    <i class="fas fa-folder-open text-6xl mb-4"></i>
+                    <p class="font-medium tracking-tight">Selecciona una opción del menú para comenzar</p>
                 </div>
             </main>
         </div>
     </div>
 
     <script>
-        // Función para colapsar/expandir la barra lateral
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('collapsed');
         }
 
-        // Función para manejar la apertura de submenús, solo si la barra lateral no está colapsada
         function toggleSubmenu(id) {
             const menu = document.getElementById(id);
             const isCollapsed = document.getElementById('sidebar').classList.contains('collapsed');
-
-            // Solo permitimos abrir menús si la barra no está colapsada
             if (!isCollapsed) {
                 menu.classList.toggle('hidden');
-            }
-        }
-
-        // Función para mostrar/ocultar el dropdown de usuario
-        function toggleUserMenu() {
-            document.getElementById('user-menu').classList.toggle('hidden');
-        }
-
-        // Cerrar dropdown de usuario si se hace click fuera
-        window.onclick = function(event) {
-            if (!event.target.closest('#user-menu') && !event.target.closest('button[onclick="toggleUserMenu()"]')) {
-                document.getElementById('user-menu').classList.add('hidden');
             }
         }
     </script>
