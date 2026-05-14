@@ -119,3 +119,19 @@ Route::get('/layout', function () {
 Route::get('/crear-usuario', function () {
     return view('form.crear_usuario');
 })->name('form.crear_usuario');
+
+Route::get('/solicitar-cambio', function () use ($tipoSolicitus, $nivel, $subnivel) {
+    return view('form.solicitar_cambio', compact('tipoSolicitus', 'nivel', 'subnivel'));
+})->name('form.solicitar_cambio');   
+
+Route::get('/aprobacion-solicitud', function () {
+    return view('form.aprobacion_solicitud');
+})->name('form.aprobacion_solicitud');
+
+Route::get('/historial-procedimiento', function () {
+    return view('form.historial_procedimiento');
+})->name('form.historial_procedimiento');
+
+Route::get('/formato', function () {
+    return view('form.formato');
+})->name('form.formato');   
