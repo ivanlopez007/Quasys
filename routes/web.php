@@ -1,6 +1,43 @@
 <?php
 
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+
+
+
+
+foreach (config('tenancy.central_domains') as $domain) {
+    Route::domain($domain)->group(function () {
+
+    Route::get('/', function () {
+        return '<h1>Welcome to the central domain</h1>';
+    });
+    
+    });
+
+
+    Route::get('/test-email', function () {
+    try {
+        $correoDestino = 'ivanlopez@industrialhefesto.com';
+
+        Mail::raw('¡Hola Ivan! Esta es una prueba exitosa de envío de correo desde tu aplicación Laravel.', function ($message) use ($correoDestino) {
+            $message->to($correoDestino)
+                    ->subject('Prueba de Correo - Industrial Hefesto');
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Correo enviado correctamente a ' . $correoDestino,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Falló el envío de correo.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});
+}
 
 $tipoSolicitus = [
     ['id' => 1, 'nombre' => 'Eliminar'],
@@ -110,7 +147,7 @@ Route::get('/layout', function () {
     ];
 
 
-    $usuario = $usuarios[1]; // Usuario ejemplo
+    $usuario = $usuarios[2]; // Usuario ejemplo
 
     return view('layout.layout', compact('usuario', 'menuCalidad', 'SubmenuReportes'));
 })->name('layout.layout');
