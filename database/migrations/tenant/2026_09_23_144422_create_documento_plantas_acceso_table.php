@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('documento_plantas_acceso', function (Blueprint $table) {
             $table->id();
+            
             $table->foreignId('documento_id')->constrained('documentos')->onDelete('cascade');
             $table->foreignId('planta_id')->constrained('plantas')->onDelete('cascade');
+            
             $table->timestamps();
 
             $table->unique(['documento_id', 'planta_id']);
