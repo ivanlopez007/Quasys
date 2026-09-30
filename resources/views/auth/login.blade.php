@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,12 +14,13 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Un toque sutil de suavidad para el fondo */
+
         .bg-custom {
             background-color: #f8fafc;
         }
     </style>
 </head>
+
 <body class="bg-custom flex items-center justify-center min-h-screen p-4">
 
     <div class="max-w-sm w-full">
@@ -35,17 +37,22 @@
 
         <!-- Tarjeta de Login Refinada -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            
-            <form action="#" method="POST" class="p-8 space-y-6">
+
+            <form action="{{ route('login.post') }}" method="POST" class="p-8 space-y-6">
+                @csrf
+
                 <!-- Campo Email -->
                 <div class="space-y-2">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Correo Electrónico</label>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
-                        <input type="email" name="email" required
-                            class="w-full bg-slate-50 border border-slate-200 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-slate-900 focus:bg-white outline-none transition-all text-slate-700 text-sm" 
+                        <input type="email" name="email" value="{{ old('email') }}" required
+                            class="w-full bg-slate-50 border @error('email') border-red-500 @else border-slate-200 @enderror pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-slate-900 focus:bg-white outline-none transition-all text-slate-700 text-sm"
                             placeholder="usuario@empresa.com">
                     </div>
+                    @error('email')
+                    <p class="text-red-500 text-xs mt-1 ml-1 font-medium">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Campo Contraseña -->
@@ -57,19 +64,22 @@
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
                         <input type="password" name="password" required
-                            class="w-full bg-slate-50 border border-slate-200 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-slate-900 focus:bg-white outline-none transition-all text-slate-700 text-sm" 
+                            class="w-full bg-slate-50 border @error('password') border-red-500 @else border-slate-200 @enderror pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-slate-900 focus:bg-white outline-none transition-all text-slate-700 text-sm"
                             placeholder="••••••••">
                     </div>
+                    @error('password')
+                    <p class="text-red-500 text-xs mt-1 ml-1 font-medium">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Recordar sesión -->
                 <div class="flex items-center px-1">
-                    <input type="checkbox" id="remember" class="w-4 h-4 text-slate-900 border-slate-300 rounded focus:ring-slate-900">
+                    <input type="checkbox" name="remember" id="remember" class="w-4 h-4 text-slate-900 border-slate-300 rounded focus:ring-slate-900" {{ old('remember') ? 'checked' : '' }}>
                     <label for="remember" class="ml-2 text-xs text-slate-500 font-semibold uppercase tracking-wide">Recordar sesión</label>
                 </div>
 
                 <!-- Botón de Entrada -->
-                <button type="submit" 
+                <button type="submit"
                     class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase tracking-[0.15em] hover:bg-slate-800 shadow-md transition-all active:scale-[0.98] flex items-center justify-center text-xs">
                     <span>Acceder</span>
                     <span class="material-symbols-outlined ml-2 text-lg">login</span>
@@ -79,9 +89,10 @@
 
         <!-- Footer -->
         <p class="text-center mt-10 text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-            &copy; 2026 Quasys APP
+            &copy; {{ date('Y') }} Quasys APP
         </p>
     </div>
 
 </body>
+
 </html>

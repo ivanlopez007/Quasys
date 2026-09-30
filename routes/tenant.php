@@ -2,6 +2,25 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\catalogo\EstadoSolicitudController;
+use App\Http\Controllers\catalogo\AreaController;
+use App\Http\Controllers\catalogo\RolController;
+use App\Http\Controllers\catalogo\LocalidadController;
+use App\Http\Controllers\catalogo\NivelController;
+use App\Http\Controllers\catalogo\MenuController;
+use App\Http\Controllers\catalogo\TipoSolicitudController;
+use App\Http\Controllers\catalogo\LugarRetencionController;
+use App\Http\Controllers\catalogo\PeriodoRetencionController;
+use App\Http\Controllers\catalogo\DisposicionFinalController;
+use App\Http\Controllers\catalogo\PlantaController;
+use App\Http\Controllers\catalogo\SubNivelController;
+use App\Http\Controllers\catalogo\SubMenuController;
+use App\Http\Controllers\catalogo\AccesoAsignadoController;
+use App\Http\Controllers\UserController;
+
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DocumentoController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -27,9 +46,105 @@ Route::middleware([
         return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
     });
 
+
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+
+
     Route::get('/prueba', function () {
         return 'Esta es una ruta de prueba para el tenant con id ' . tenant('id');
     });
 
 
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('roles', RolController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('areas', AreaController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('localidades', LocalidadController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('niveles', NivelController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('menu', MenuController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('estado_solicitud', EstadoSolicitudController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('tipo_solicitud', TipoSolicitudController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('lugar_retencion', LugarRetencionController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('periodo_retencion', PeriodoRetencionController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('disposicion_final', DisposicionFinalController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('planta', PlantaController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('sub_nivel', SubNivelController::class)->except(['create', 'edit', 'show']);
+    });
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::resource('sub_menu', SubMenuController::class)->except(['create', 'edit', 'show']);
+    });
+
+
+    Route::prefix('catalogo')->name('catalogo.')->group(function () {
+        Route::get('acceso_asignado', [AccesoAsignadoController::class, 'index'])->name('acceso_asignado.index');
+        Route::post('acceso_asignado', [AccesoAsignadoController::class, 'store'])->name('acceso_asignado.store');
+    });
+
+
+    Route::resource('usuarios', UserController::class)->except(['create', 'edit', 'show']);
+
+
+
+    Route::middleware(['auth'])->prefix('gestion-documental')->name('documentos.')->group(function () {
+        // Documentos vigentes
+        Route::get('/', [DocumentoController::class, 'index'])->name('index');
+        Route::get('/historial/{codigo}', [DocumentoController::class, 'historial'])->name('historial');
+        Route::get('/archivo/ver', [DocumentoController::class, 'verArchivo'])->name('archivo.ver');
+
+        // Solicitudes
+        Route::get('/solicitudes', [DocumentoController::class, 'solicitudesIndex'])->name('solicitudes.index');
+        Route::get('/solicitudes/crear', [DocumentoController::class, 'createSolicitud'])->name('solicitudes.create');
+        Route::post('/solicitudes', [DocumentoController::class, 'storeSolicitud'])->name('solicitudes.store');
+
+        // Aprobación y Rechazo
+        Route::post('/solicitudes/{id}/aprobar', [DocumentoController::class, 'aprobar'])->name('solicitudes.aprobar');
+        Route::post('/solicitudes/{id}/rechazar', [DocumentoController::class, 'rechazar'])->name('solicitudes.rechazar');
+    });
 });

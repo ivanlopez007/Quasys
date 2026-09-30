@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
@@ -9,34 +10,41 @@ use Illuminate\Support\Facades\Route;
 foreach (config('tenancy.central_domains') as $domain) {
     Route::domain($domain)->group(function () {
 
-    Route::get('/', function () {
-        return '<h1>Welcome to the central domain</h1>';
-    });
-    
+
+        Route::middleware('')->controller(TenantController::class)->group(function () {
+
+            Route::get('/crear-empresa', 'formCrearEmpresa')->name('central.empresas');
+            Route::post('/crear-empresa', 'crearEmpresa')->name('central.empresas.post');
+        });
+
+
+        Route::get('/', function () {
+            return '<h1>Welcome to the central domain</h1>';
+        });
     });
 
 
     Route::get('/test-email', function () {
-    try {
-        $correoDestino = 'ivanlopez@industrialhefesto.com';
+        try {
+            $correoDestino = 'ivanlopez@industrialhefesto.com';
 
-        Mail::raw('¡Hola Ivan! Esta es una prueba exitosa de envío de correo desde tu aplicación Laravel.', function ($message) use ($correoDestino) {
-            $message->to($correoDestino)
+            Mail::raw('¡Hola Ivan! Esta es una prueba exitosa de envío de correo desde tu aplicación Laravel.', function ($message) use ($correoDestino) {
+                $message->to($correoDestino)
                     ->subject('Prueba de Correo - Industrial Hefesto');
-        });
+            });
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Correo enviado correctamente a ' . $correoDestino,
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Falló el envío de correo.',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
-});
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Correo enviado correctamente a ' . $correoDestino,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Falló el envío de correo.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    });
 }
 
 $tipoSolicitus = [
@@ -70,7 +78,7 @@ Route::get('/', function () {
 
 Route::get('/auth/login', function () {
     return view('auth.login');
-})->name('login');
+})->name('central.login');
 
 
 Route::get('/admin/dashboard', function () {
@@ -109,7 +117,7 @@ Route::get('/layout', function () {
             'activo' => false
         ]
     ];
-    
+
     $menuCalidad = [
         [
             'id' => 1,
@@ -159,7 +167,7 @@ Route::get('/crear-usuario', function () {
 
 Route::get('/solicitar-cambio', function () use ($tipoSolicitus, $nivel, $subnivel) {
     return view('form.solicitar_cambio', compact('tipoSolicitus', 'nivel', 'subnivel'));
-})->name('form.solicitar_cambio');   
+})->name('form.solicitar_cambio');
 
 Route::get('/aprobacion-solicitud', function () {
     return view('form.aprobacion_solicitud');
@@ -171,4 +179,4 @@ Route::get('/historial-procedimiento', function () {
 
 Route::get('/formato', function () {
     return view('form.formato');
-})->name('form.formato');   
+})->name('form.formato');
