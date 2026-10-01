@@ -90,6 +90,21 @@ class User extends Authenticatable
         return $this->hasMany(CambioDocumento::class, 'solicitante_id');
     }
 
+    /**
+     * Los roles son dinámicos: un usuario tiene acceso a una pantalla si su rol tiene
+     * asignado (y activo) el sub menú con esa URL.
+     */
+    public function tieneAcceso(string $url): bool
+    {
+        if (!$this->rol_id) {
+            return false;
+        }
+
+        return AccesoAsignado::where('rol_id', $this->rol_id)
+            ->whereHas('subMenu', fn ($q) => $q->where('url', $url)->where('activo', true))
+            ->exists();
+    }
+
     public function documentosElaborados(): HasMany
     {
         return $this->hasMany(Documento::class, 'usuario_id');

@@ -21,6 +21,7 @@ use App\Http\Controllers\UserController;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\DocumentosSinResponsableController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -86,6 +87,7 @@ Route::middleware([
         // Documentos vigentes
         Route::get('/', [DocumentoController::class, 'index'])->name('index');
         Route::get('/historial/{codigo}', [DocumentoController::class, 'historial'])->name('historial');
+        Route::get('/versiones/{codigo}', [DocumentoController::class, 'versiones'])->name('versiones');
         Route::get('/archivo/ver', [DocumentoController::class, 'verArchivo'])->name('archivo.ver');
         Route::get('/archivo/contenido', [DocumentoController::class, 'contenidoArchivo'])->name('archivo.contenido');
 
@@ -93,6 +95,10 @@ Route::middleware([
         Route::get('/solicitudes', [DocumentoController::class, 'solicitudesIndex'])->name('solicitudes.index');
         Route::get('/solicitudes/crear', [DocumentoController::class, 'createSolicitud'])->name('solicitudes.create');
         Route::post('/solicitudes', [DocumentoController::class, 'storeSolicitud'])->name('solicitudes.store');
+
+        // Documentos y solicitudes cuyo responsable fue dado de baja
+        Route::get('/sin-responsable', [DocumentosSinResponsableController::class, 'index'])->name('sin_responsable.index');
+        Route::post('/sin-responsable/reasignar', [DocumentosSinResponsableController::class, 'reasignar'])->name('sin_responsable.reasignar');
 
         // Bandeja "Por aprobar" (el sub menú con esta URL da permiso de aprobador)
         Route::get('/aprobaciones', [DocumentoController::class, 'aprobaciones'])->name('aprobaciones');

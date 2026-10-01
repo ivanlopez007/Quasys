@@ -31,6 +31,66 @@ class ReasignacionUsuarioService
         ];
     }
 
+    /**
+     * Reasigna documentos vigentes y solicitudes pendientes puntuales que quedaron sin
+     * responsable (su usuario está dado de baja). Lo que ya tiene un responsable activo,
+     * o un documento que el destino no podría ver por su planta, se omite y se informa.
+     *
+     * @return array{documentos: int, solicitudes: int, omitidos: array<int, string>}
+     */
+    public function reasignarSinResponsable(array $documentoIds, array $solicitudIds, User $destino, User $actor): array
+    {
+        if ($destino->trashed()) {
+            throw new DomainException('No se puede reasignar a un usuario eliminado.');
+        }
+
+        return DB::transaction(function () use ($documentoIds, $solicitudIds, $destino, $actor) {
+            $omitidos = [];
+            $sinResponsable = fn ($q) => $q->onlyTrashed();
+
+            $documentos = Documento::vigentes()
+                ->whereIn('id', $documentoIds)
+                ->whereHas('autor', $sinResponsable)
+                ->with('plantas:id')
+                ->lockForUpdate()
+                ->get();
+
+            $asignados = 0;
+            foreach ($documentos as $documento) {
+                if (!$destino->planta_id || !$documento->plantas->contains('id', $destino->planta_id)) {
+                    $omitidos[] = "{$documento->codigo_documento} (no está asignado a la planta del nuevo responsable)";
+                    continue;
+                }
+
+                BitacoraDocumento::registrar('documento_reasignado', $actor->id, $documento->id, null, [
+                    'de_usuario_id' => $documento->usuario_id,
+                    'a_usuario_id' => $destino->id,
+                    'codigo' => $documento->codigo_documento,
+                    'version' => $documento->version,
+                ]);
+                $documento->update(['usuario_id' => $destino->id]);
+                $asignados++;
+            }
+
+            $solicitudes = CambioDocumento::pendientes()
+                ->whereIn('id', $solicitudIds)
+                ->whereHas('solicitante', $sinResponsable)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($solicitudes as $solicitud) {
+                BitacoraDocumento::registrar('solicitud_reasignada', $actor->id, $solicitud->documento_id, $solicitud->id, [
+                    'de_usuario_id' => $solicitud->solicitante_id,
+                    'a_usuario_id' => $destino->id,
+                    'codigo' => $solicitud->codigo_documento,
+                ]);
+                $solicitud->update(['solicitante_id' => $destino->id]);
+            }
+
+            return ['documentos' => $asignados, 'solicitudes' => $solicitudes->count(), 'omitidos' => $omitidos];
+        });
+    }
+
     public function reasignar(User $origen, User $destino, User $actor): array
     {
         if ((int) $origen->id === (int) $destino->id) {

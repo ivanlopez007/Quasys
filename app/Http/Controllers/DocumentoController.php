@@ -119,6 +119,7 @@ class DocumentoController extends Controller
 
         return view('documentos.solicitudes_create', [
             'documentoOrigen' => $documentoOrigen,
+            'versionesOrigen' => $documentoOrigen ? $this->versionesVisibles($documentoOrigen->codigo_documento) : collect(),
             'documentosVigentes' => $documentosVigentes,
             'codigosPendientes' => CambioDocumento::pendientes()->pluck('codigo_documento')->filter()->flip(),
             'niveles' => Nivel::where('activo', true)->get(),
@@ -187,17 +188,36 @@ class DocumentoController extends Controller
      */
     public function historial($codigo)
     {
-        $versiones = Documento::where('codigo_documento', $codigo)
-            ->visiblesPara(Auth::user())
-            ->with(['autor.informacion', 'aprobador.informacion', 'cambioOrigen', 'periodoRetencion', 'plantas'])
-            ->orderBy('version', 'desc')
-            ->get();
+        $versiones = $this->versionesVisibles($codigo);
 
         abort_if($versiones->isEmpty(), 404);
 
         $documento = $versiones->first(); // la versión más reciente
 
         return view('documentos.historial', compact('documento', 'versiones'));
+    }
+
+    /**
+     * Tabla de versiones (HTML) para el formulario de solicitud, cuando se elige
+     * el documento a revisar o dar de baja.
+     */
+    public function versiones($codigo)
+    {
+        $versiones = $this->versionesVisibles($codigo);
+
+        abort_if($versiones->isEmpty(), 404);
+
+        return view('documentos._tabla_versiones', compact('versiones'));
+    }
+
+    /** Versiones de un código que el usuario puede ver por su planta, de la más reciente a la más antigua. */
+    private function versionesVisibles(string $codigo)
+    {
+        return Documento::where('codigo_documento', $codigo)
+            ->visiblesPara(Auth::user())
+            ->with(['autor.informacion', 'aprobador.informacion', 'cambioOrigen', 'periodoRetencion', 'plantas'])
+            ->orderBy('version', 'desc')
+            ->get();
     }
 
     /**

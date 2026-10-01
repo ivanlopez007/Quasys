@@ -114,7 +114,7 @@
                                             'plantas' => $doc->plantas->pluck('id'),
                                         ];
                                     @endphp
-                                    <option value="{{ $doc->id }}" @selected(old('documento_id') == $doc->id) @disabled($pendiente)
+                                    <option value="{{ $doc->id }}" @selected(old('documento_id') == $doc->id) @disabled($pendiente) data-codigo="{{ $doc->codigo_documento }}"
                                         data-busqueda="{{ Str::lower($doc->codigo_documento . ' ' . $doc->nombre_documento) }}"
                                         data-datos='@json($datosDoc)'>
                                         {{ $doc->codigo_documento }} · v{{ $doc->version }} · {{ $doc->nombre_documento }}{{ $pendiente ? ' (con solicitud pendiente)' : '' }}
@@ -236,6 +236,26 @@
                 <textarea id="descripcion_cambios" name="descripcion_cambios" rows="4" maxlength="5000"
                     placeholder="Qué se modificó respecto a la versión vigente..." class="{{ $input }}">{{ old('descripcion_cambios') }}</textarea>
             </div>
+
+            {{-- REVISIÓN / ELIMINAR: todas las versiones del documento elegido --}}
+            <div data-tipos="{{ CambioDocumento::TIPO_REVISION }},{{ CambioDocumento::TIPO_ELIMINAR }}" class="hidden">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                    <p class="text-[11px] font-black uppercase tracking-wider text-slate-400">Versiones del documento</p>
+                    <a id="link-historial" href="{{ $documentoOrigen ? route('documentos.historial', $documentoOrigen->codigo_documento) : '#' }}" target="_blank"
+                        class="{{ $documentoOrigen ? '' : 'hidden' }} text-[11px] font-bold text-slate-500 hover:text-slate-900 transition">
+                        <i class="fas fa-up-right-from-square mr-1"></i> Abrir historial
+                    </a>
+                </div>
+                <div id="tabla-versiones" class="rounded-xl border border-slate-200 overflow-hidden">
+                    @if ($documentoOrigen)
+                        @include('documentos._tabla_versiones', ['versiones' => $versionesOrigen])
+                    @else
+                        <p class="px-4 py-8 text-center text-xs text-slate-400">
+                            <i class="fas fa-clock-rotate-left mr-1"></i> Elige un documento vigente para ver sus versiones.
+                        </p>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-200 flex justify-end gap-2">
@@ -285,6 +305,7 @@
     // Al elegir un documento vigente, precarga sus datos (nombre, clasificación, retención y plantas)
     function precargarDocumento() {
         const opcion = document.getElementById('documento_id')?.selectedOptions[0];
+        cargarVersiones(opcion?.dataset.codigo);
         if (!opcion || !opcion.dataset.datos) return;
 
         const datos = JSON.parse(opcion.dataset.datos);
@@ -302,6 +323,45 @@
         document.querySelectorAll('.planta-check').forEach(c => c.checked = plantas.includes(c.value));
         if (typeof sincronizarTodas === 'function') sincronizarTodas();
     }
+
+    // Trae la tabla de versiones del documento elegido
+    const urlVersiones = @js(route('documentos.versiones', ['codigo' => '__CODIGO__']));
+    const urlHistorial = @js(route('documentos.historial', ['codigo' => '__CODIGO__']));
+    let versionesPeticion = 0;
+
+    async function cargarVersiones(codigo) {
+        const contenedor = document.getElementById('tabla-versiones');
+        const link = document.getElementById('link-historial');
+        if (!contenedor || !document.getElementById('documento_id')) return;
+
+        const mensaje = (icono, texto) =>
+            `<p class="px-4 py-8 text-center text-xs text-slate-400"><i class="fas ${icono} mr-1"></i> ${texto}</p>`;
+
+        if (!codigo) {
+            contenedor.innerHTML = mensaje('fa-clock-rotate-left', 'Elige un documento vigente para ver sus versiones.');
+            link.classList.add('hidden');
+            return;
+        }
+
+        const peticion = ++versionesPeticion;
+        contenedor.innerHTML = mensaje('fa-circle-notch fa-spin', 'Cargando versiones...');
+        link.href = urlHistorial.replace('__CODIGO__', encodeURIComponent(codigo));
+        link.classList.remove('hidden');
+
+        try {
+            const respuesta = await fetch(urlVersiones.replace('__CODIGO__', encodeURIComponent(codigo)), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+            const html = await respuesta.text();
+            if (peticion === versionesPeticion) contenedor.innerHTML = html; // ignora respuestas viejas
+        } catch (e) {
+            if (peticion === versionesPeticion) contenedor.innerHTML = mensaje('fa-triangle-exclamation', 'No se pudieron cargar las versiones.');
+        }
+    }
+
+    // Si se regresó al formulario con un documento ya elegido (error de validación), muestra sus versiones
+    if (document.getElementById('documento_id')?.value) cargarVersiones(document.getElementById('documento_id').selectedOptions[0]?.dataset.codigo);
 
     // Filtra la lista de documentos vigentes mientras se escribe
     document.getElementById('buscar-documento')?.addEventListener('input', e => {

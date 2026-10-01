@@ -136,15 +136,7 @@ class CambioDocumento extends Model
      */
     public static function usuarioEsAprobador(User $usuario): bool
     {
-        if (!$usuario->rol_id) {
-            return false;
-        }
-
-        return AccesoAsignado::where('rol_id', $usuario->rol_id)
-            ->whereHas('subMenu', fn($q) => $q
-                ->where('url', config('documentos.submenu_aprobador_url'))
-                ->where('activo', true))
-            ->exists();
+        return $usuario->tieneAcceso(config('documentos.submenu_aprobador_url'));
     }
 
     public function documento(): BelongsTo
