@@ -16,6 +16,18 @@
     </div>
     @endif
 
+    @if(session('warning'))
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-xs font-bold flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-triangle-exclamation text-amber-500 text-sm"></i>
+            <span>{{ session('warning') }}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-amber-500 hover:text-amber-800">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    @endif
+
     @if($errors->any())
     <div class="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-xs font-bold space-y-1">
         <div class="flex items-center gap-2 mb-1">
@@ -44,6 +56,20 @@
         </div>
     </div>
 
+    <!-- PESTAÑAS: ACTIVOS / ELIMINADOS -->
+    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+        <a href="{{ route('usuarios.index') }}"
+           class="px-4 py-2 rounded-lg text-xs font-bold transition {{ $verEliminados ? 'text-slate-500 hover:text-slate-800' : 'bg-white text-slate-900 shadow-sm' }}">
+            <i class="fas fa-user-check mr-1.5"></i> Activos
+            <span class="ml-1 px-1.5 py-0.5 rounded-md text-[10px] {{ $verEliminados ? 'bg-slate-200 text-slate-500' : 'bg-slate-900 text-white' }}">{{ $totalActivos }}</span>
+        </a>
+        <a href="{{ route('usuarios.index', ['ver' => 'eliminados']) }}"
+           class="px-4 py-2 rounded-lg text-xs font-bold transition {{ $verEliminados ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+            <i class="fas fa-user-slash mr-1.5"></i> Eliminados
+            <span class="ml-1 px-1.5 py-0.5 rounded-md text-[10px] {{ $verEliminados ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-500' }}">{{ $totalEliminados }}</span>
+        </a>
+    </div>
+
     <!-- TABLA DE USUARIOS -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row gap-3 justify-between items-center">
@@ -64,7 +90,8 @@
                         <th class="py-3.5 px-6">Rol</th>
                         <th class="py-3.5 px-6">Ubicación / Área</th>
                         <th class="py-3.5 px-6">Jefe Inmediato</th>
-                        <th class="py-3.5 px-6">Estatus</th>
+                        <th class="py-3.5 px-6">A su cargo</th>
+                        <th class="py-3.5 px-6">{{ $verEliminados ? 'Eliminado el' : 'Estatus' }}</th>
                         <th class="py-3.5 px-6 text-right">Acciones</th>
                     </tr>
                 </thead>
@@ -93,10 +120,40 @@
                             </div>
                         </td>
                         <td class="py-3.5 px-6 font-semibold text-slate-600">
-                            {{ $user->jefeInmediato?->informacion ? $user->jefeInmediato->informacion->nombre . ' ' . $user->jefeInmediato->informacion->apellidos : '—' }}
+                            {{ $user->jefeInmediato?->informacion ? $user->jefeInmediato->informacion->nombre . ' ' . $user->jefeInmediato->informacion->apellidos : ($user->jefeInmediato?->email ?? '—') }}
+                            @if($user->jefeInmediato?->trashed())
+                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase bg-rose-50 text-rose-600 border border-rose-200" title="Su jefe inmediato está eliminado: asígnale otro">Eliminado</span>
+                            @endif
                         </td>
                         <td class="py-3.5 px-6">
-                            @if($user->informacion?->status)
+                            @php($aCargo = $user->documentos_vigentes_count + $user->solicitudes_pendientes_count + $user->subordinados_count)
+                            @if($aCargo > 0)
+                            <div class="flex flex-wrap gap-1">
+                                @if($user->documentos_vigentes_count)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200" title="Documentos vigentes">
+                                    <i class="fas fa-file-lines text-slate-400"></i> {{ $user->documentos_vigentes_count }}
+                                </span>
+                                @endif
+                                @if($user->solicitudes_pendientes_count)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Solicitudes pendientes">
+                                    <i class="fas fa-hourglass-half text-amber-400"></i> {{ $user->solicitudes_pendientes_count }}
+                                </span>
+                                @endif
+                                @if($user->subordinados_count)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200" title="Subordinados">
+                                    <i class="fas fa-users text-slate-400"></i> {{ $user->subordinados_count }}
+                                </span>
+                                @endif
+                            </div>
+                            @else
+                            <span class="text-slate-300">—</span>
+                            @endif
+                        </td>
+                        <td class="py-3.5 px-6">
+                            @if($verEliminados)
+                            <div class="font-semibold text-slate-600">{{ $user->deleted_at->format('d/m/Y') }}</div>
+                            <div class="text-[10px] text-slate-400">{{ $user->deleted_at->format('H:i') }}</div>
+                            @elseif($user->informacion?->status)
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Activo
                             </span>
@@ -106,20 +163,42 @@
                             </span>
                             @endif
                         </td>
-                        <td class="py-3.5 px-6 text-right space-x-1">
+                        @php($datosCargo = ['id' => $user->id, 'nombre' => trim(($user->informacion?->nombre ?? '') . ' ' . ($user->informacion?->apellidos ?? '')) ?: $user->email, 'documentos' => $user->documentos_vigentes_count, 'solicitudes' => $user->solicitudes_pendientes_count, 'subordinados' => $user->subordinados_count])
+                        <td class="py-3.5 px-6 text-right space-x-1 whitespace-nowrap">
+                            @if($verEliminados)
+                            <form method="POST" action="{{ route('usuarios.restore', $user->id) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition" title="Restaurar">
+                                    <i class="fas fa-rotate-left"></i> Restaurar
+                                </button>
+                            </form>
+                            @if($aCargo > 0)
+                            <button onclick="openReasignarModal(@js($datosCargo))" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition" title="Reasignar documentos">
+                                <i class="fas fa-right-left"></i> Reasignar
+                            </button>
+                            @endif
+                            @else
                             <button onclick="openEditModal(@js($user))" class="p-2 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition" title="Editar">
                                 <i class="fas fa-pen-to-square"></i>
                             </button>
-                            <button onclick="openDeleteModal({{ $user->id }}, @js(trim(($user->informacion?->nombre ?? '') . ' ' . ($user->informacion?->apellidos ?? ''))))" class="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition" title="Eliminar">
+                            @if($aCargo > 0)
+                            <button onclick="openReasignarModal(@js($datosCargo))" class="p-2 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition" title="Reasignar documentos">
+                                <i class="fas fa-right-left"></i>
+                            </button>
+                            @endif
+                            @if($user->id !== auth()->id())
+                            <button onclick="openDeleteModal(@js($datosCargo))" class="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition" title="Eliminar">
                                 <i class="fas fa-trash-can"></i>
                             </button>
+                            @endif
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="py-12 text-center text-slate-400 font-medium">
+                        <td colspan="7" class="py-12 text-center text-slate-400 font-medium">
                             <i class="fas fa-users-slash text-4xl mb-3 block text-slate-300"></i>
-                            No hay usuarios registrados en el sistema.
+                            {{ $verEliminados ? 'No hay usuarios eliminados.' : 'No hay usuarios registrados en el sistema.' }}
                         </td>
                     </tr>
                     @endforelse
@@ -275,25 +354,86 @@
     </div>
 </div>
 
+<!-- Lista de usuarios activos que pueden recibir documentos (se clona en ambos modales) -->
+<template id="destinoOptions">
+    <option value="">-- Seleccionar usuario --</option>
+    @foreach($jefes as $destino)
+    <option value="{{ $destino->id }}">{{ $destino->informacion ? $destino->informacion->nombre . ' ' . $destino->informacion->apellidos : $destino->email }}</option>
+    @endforeach
+</template>
+
 <!-- MODAL ELIMINAR -->
 <div id="deleteModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-slate-100 overflow-hidden text-center p-6 space-y-4">
-        <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto text-xl">
-            <i class="fas fa-triangle-exclamation"></i>
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 overflow-hidden p-6 space-y-4">
+        <div class="text-center space-y-3">
+            <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto text-xl">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800 text-sm">¿Dar de baja al usuario?</h3>
+                <p class="text-xs text-slate-500 mt-1">Estás a punto de eliminar a <strong id="deleteName" class="text-slate-800"></strong>. Ya no podrá iniciar sesión, pero podrás restaurarlo desde la pestaña Eliminados.</p>
+            </div>
         </div>
-        <div>
-            <h3 class="font-bold text-slate-800 text-sm">¿Eliminar Usuario?</h3>
-            <p class="text-xs text-slate-500 mt-1">Estás a punto de eliminar a <strong id="deleteName" class="text-slate-800"></strong>.</p>
-        </div>
-        <form id="deleteForm" method="POST" action="" class="flex items-center justify-center gap-2 pt-2">
+        <form id="deleteForm" method="POST" action="" class="space-y-4">
             @csrf
             <input type="hidden" name="_method" value="DELETE">
-            <button type="button" onclick="closeDeleteModal()" class="w-full py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition">
-                Cancelar
+
+            <div id="deleteCargo" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3 text-left">
+                <p class="text-[11px] font-bold text-amber-800">
+                    <i class="fas fa-circle-info mr-1"></i> Este usuario tiene a su cargo: <span id="deleteCargoTexto"></span>
+                </p>
+                <div class="flex flex-col">
+                    <label for="deleteDestino" class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Reasignar a (opcional)</label>
+                    <select id="deleteDestino" name="reasignar_a_id" class="border border-gray-300 p-2 text-sm rounded-lg focus:ring-2 focus:ring-slate-900 outline-none bg-white transition cursor-pointer"></select>
+                    <span class="text-[10px] text-slate-500 mt-1">Si no eliges a nadie, podrás reasignarlo después desde la pestaña Eliminados.</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center gap-2 pt-2">
+                <button type="button" onclick="closeDeleteModal()" class="w-full py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition">
+                    Cancelar
+                </button>
+                <button type="submit" class="w-full py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md transition">
+                    Sí, dar de baja
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL REASIGNAR -->
+<div id="reasignarModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+        <div class="bg-slate-800 px-6 py-4 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-right-left text-slate-400"></i>
+                <span>Reasignar documentos</span>
+            </h2>
+            <button onclick="closeReasignarModal()" class="text-slate-400 hover:text-white transition text-sm p-1">
+                <i class="fas fa-times"></i>
             </button>
-            <button type="submit" class="w-full py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md transition">
-                Sí, Eliminar
-            </button>
+        </div>
+        <form id="reasignarForm" method="POST" action="" class="p-6 space-y-4">
+            @csrf
+            <p class="text-xs text-slate-600">
+                Todo lo que <strong id="reasignarName" class="text-slate-800"></strong> tiene a su cargo pasará al usuario que elijas:
+            </p>
+            <ul id="reasignarLista" class="text-xs text-slate-700 space-y-1 pl-1"></ul>
+            <div class="flex flex-col">
+                <label for="reasignarDestino" class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Nuevo responsable <span class="text-rose-500">*</span></label>
+                <select id="reasignarDestino" name="reasignar_a_id" required class="border border-gray-300 p-2 text-sm rounded-lg focus:ring-2 focus:ring-slate-900 outline-none bg-white transition cursor-pointer"></select>
+            </div>
+            <p class="text-[10px] text-slate-400">
+                Las versiones obsoletas conservan a su autor original. Cada reasignación queda registrada en la bitácora.
+            </p>
+            <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+                <button type="button" onclick="closeReasignarModal()" class="px-5 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md transition">
+                    Reasignar
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -361,14 +501,50 @@
         document.getElementById('userModal').classList.add('hidden');
     }
 
-    function openDeleteModal(id, nombre) {
-        document.getElementById('deleteName').innerText = nombre;
-        document.getElementById('deleteForm').action = baseUrl + '/' + id;
+    // Llena un <select> con los usuarios activos, sin el usuario origen
+    function llenarDestinos(select, excluirId) {
+        select.innerHTML = document.getElementById('destinoOptions').innerHTML;
+        const propia = select.querySelector(`option[value="${excluirId}"]`);
+        if (propia) propia.remove();
+    }
+
+    function describirCargo(u) {
+        return [
+            u.documentos ? `${u.documentos} documento(s) vigente(s)` : null,
+            u.solicitudes ? `${u.solicitudes} solicitud(es) pendiente(s)` : null,
+            u.subordinados ? `${u.subordinados} subordinado(s)` : null,
+        ].filter(Boolean);
+    }
+
+    function openDeleteModal(u) {
+        document.getElementById('deleteName').innerText = u.nombre;
+        document.getElementById('deleteForm').action = baseUrl + '/' + u.id;
+
+        const cargo = describirCargo(u);
+        const select = document.getElementById('deleteDestino');
+        llenarDestinos(select, u.id);
+        select.disabled = cargo.length === 0; // no enviar el campo si no hay nada que reasignar
+        document.getElementById('deleteCargo').classList.toggle('hidden', cargo.length === 0);
+        document.getElementById('deleteCargoTexto').innerText = cargo.join(', ') + '.';
+
         document.getElementById('deleteModal').classList.remove('hidden');
     }
 
     function closeDeleteModal() {
         document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    function openReasignarModal(u) {
+        document.getElementById('reasignarName').innerText = u.nombre;
+        document.getElementById('reasignarForm').action = baseUrl + '/' + u.id + '/reasignar';
+        document.getElementById('reasignarLista').innerHTML = describirCargo(u)
+            .map(t => `<li><i class="fas fa-check text-emerald-500 mr-1.5"></i>${t}</li>`).join('');
+        llenarDestinos(document.getElementById('reasignarDestino'), u.id);
+        document.getElementById('reasignarModal').classList.remove('hidden');
+    }
+
+    function closeReasignarModal() {
+        document.getElementById('reasignarModal').classList.add('hidden');
     }
 
     function filterTable() {

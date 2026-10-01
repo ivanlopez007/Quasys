@@ -139,7 +139,13 @@
             <!-- Campo Periodo de Retención -->
             <div>
                 <label for="periodoRetencionInput" class="block text-xs font-bold text-slate-700 mb-1.5">Periodo de Retención <span class="text-rose-500">*</span></label>
-                <input type="text" id="periodoRetencionInput" name="periodo_retencion" required placeholder="Ej. 1 Año, 5 Años, Permanente..." class="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 text-slate-800 font-medium transition">
+                <select id="periodoRetencionInput" name="periodo_retencion" required class="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 text-slate-800 font-medium transition bg-white">
+                    <option value="" disabled selected>Selecciona un periodo...</option>
+                    <option value="Años">Años</option>
+                    <option value="Días">Días</option>
+                    <option value="Horas">Horas</option>
+                    <option value="Permanente">Permanente</option>
+                </select>
             </div>
 
             <!-- Campo Tiempo -->

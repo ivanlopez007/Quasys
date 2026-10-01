@@ -56,6 +56,9 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'url' => env('CLOUDFLARE_R2_URL', 'https://pub-6a02bbfc5d9a45428d22ffda6fdfcd2e.r2.dev'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
+            // Lanzar excepción si R2 falla, en lugar de devolver false en silencio
+            // (evita, por ejemplo, publicar un documento cuyo archivo no se movió).
+            'throw' => true,
         ],
 
     ],

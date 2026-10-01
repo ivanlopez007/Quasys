@@ -94,7 +94,7 @@
                         </div>
                         @else
                         {{-- Enlace directo de submenú --}}
-                        <a href="{{ $subMenu->ruta ? (Route::has($subMenu->ruta) ? route($subMenu->ruta) : url($subMenu->ruta)) : '#' }}"
+                        <a href="{{ $subMenu->url ? (Route::has($subMenu->url) ? route($subMenu->url) : url($subMenu->url)) : '#' }}"
                             class="p-2 text-xs text-slate-400 hover:text-white transition flex items-center gap-2">
                             @if(!empty($subMenu->icono))
                             <i class="{{ $subMenu->icono }} text-[10px]"></i>

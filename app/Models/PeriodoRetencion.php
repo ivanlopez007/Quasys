@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class PeriodoRetencion extends Model
 {
@@ -14,6 +16,25 @@ class PeriodoRetencion extends Model
         'tiempo' => 'integer',
         'activo' => 'boolean',
     ];
+
+    /** Texto completo del periodo: "5 Años", "1 Año", "Permanente". */
+    public static function describir(?int $tiempo, ?string $unidad): string
+    {
+        $unidad = trim((string) $unidad);
+
+        if (!$tiempo || Str::lower(Str::ascii($unidad)) === 'permanente') {
+            return $unidad ?: '—';
+        }
+
+        $singular = ['Años' => 'Año', 'Meses' => 'Mes', 'Semanas' => 'Semana', 'Días' => 'Día', 'Horas' => 'Hora'];
+
+        return $tiempo . ' ' . ($tiempo === 1 ? ($singular[$unidad] ?? $unidad) : $unidad);
+    }
+
+    protected function etiqueta(): Attribute
+    {
+        return Attribute::get(fn () => self::describir($this->tiempo, $this->periodo_retencion));
+    }
 
     public function documentos(): HasMany
     {

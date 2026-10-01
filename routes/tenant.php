@@ -42,6 +42,7 @@ Route::middleware([
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
+    
     Route::get('/', function () {
         return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
     });
@@ -53,95 +54,48 @@ Route::middleware([
 
 
 
-    Route::get('/prueba', function () {
-        return 'Esta es una ruta de prueba para el tenant con id ' . tenant('id');
+
+    // Catálogos y usuarios: solo usuarios autenticados
+    Route::middleware(['auth'])->group(function () {
+        Route::prefix('catalogo')->name('catalogo.')->group(function () {
+            Route::resource('roles', RolController::class)->except(['create', 'edit', 'show']);
+            Route::resource('areas', AreaController::class)->except(['create', 'edit', 'show']);
+            Route::resource('localidades', LocalidadController::class)->except(['create', 'edit', 'show']);
+            Route::resource('niveles', NivelController::class)->except(['create', 'edit', 'show']);
+            Route::resource('menu', MenuController::class)->except(['create', 'edit', 'show']);
+            Route::resource('estado_solicitud', EstadoSolicitudController::class)->except(['create', 'edit', 'show']);
+            Route::resource('tipo_solicitud', TipoSolicitudController::class)->except(['create', 'edit', 'show']);
+            Route::resource('lugar_retencion', LugarRetencionController::class)->except(['create', 'edit', 'show']);
+            Route::resource('periodo_retencion', PeriodoRetencionController::class)->except(['create', 'edit', 'show']);
+            Route::resource('disposicion_final', DisposicionFinalController::class)->except(['create', 'edit', 'show']);
+            Route::resource('planta', PlantaController::class)->except(['create', 'edit', 'show']);
+            Route::resource('sub_nivel', SubNivelController::class)->except(['create', 'edit', 'show']);
+            Route::resource('sub_menu', SubMenuController::class)->except(['create', 'edit', 'show']);
+            Route::get('acceso_asignado', [AccesoAsignadoController::class, 'index'])->name('acceso_asignado.index');
+            Route::post('acceso_asignado', [AccesoAsignadoController::class, 'store'])->name('acceso_asignado.store');
+        });
+
+        Route::resource('usuarios', UserController::class)->except(['create', 'edit', 'show']);
+        Route::post('usuarios/{id}/restaurar', [UserController::class, 'restore'])->whereNumber('id')->name('usuarios.restore');
+        Route::post('usuarios/{id}/reasignar', [UserController::class, 'reasignar'])->whereNumber('id')->name('usuarios.reasignar');
     });
 
 
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('roles', RolController::class)->except(['create', 'edit', 'show']);
-    });
 
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('areas', AreaController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('localidades', LocalidadController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('niveles', NivelController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('menu', MenuController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('estado_solicitud', EstadoSolicitudController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('tipo_solicitud', TipoSolicitudController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('lugar_retencion', LugarRetencionController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('periodo_retencion', PeriodoRetencionController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('disposicion_final', DisposicionFinalController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('planta', PlantaController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('sub_nivel', SubNivelController::class)->except(['create', 'edit', 'show']);
-    });
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::resource('sub_menu', SubMenuController::class)->except(['create', 'edit', 'show']);
-    });
-
-
-    Route::prefix('catalogo')->name('catalogo.')->group(function () {
-        Route::get('acceso_asignado', [AccesoAsignadoController::class, 'index'])->name('acceso_asignado.index');
-        Route::post('acceso_asignado', [AccesoAsignadoController::class, 'store'])->name('acceso_asignado.store');
-    });
-
-
-    Route::resource('usuarios', UserController::class)->except(['create', 'edit', 'show']);
-
-
-
-    Route::middleware(['auth'])->prefix('gestion-documental')->name('documentos.')->group(function () {
+    Route::middleware(['auth'])->prefix('control-documentos')->name('documentos.')->group(function () {
         // Documentos vigentes
         Route::get('/', [DocumentoController::class, 'index'])->name('index');
         Route::get('/historial/{codigo}', [DocumentoController::class, 'historial'])->name('historial');
         Route::get('/archivo/ver', [DocumentoController::class, 'verArchivo'])->name('archivo.ver');
+        Route::get('/archivo/contenido', [DocumentoController::class, 'contenidoArchivo'])->name('archivo.contenido');
 
         // Solicitudes
         Route::get('/solicitudes', [DocumentoController::class, 'solicitudesIndex'])->name('solicitudes.index');
         Route::get('/solicitudes/crear', [DocumentoController::class, 'createSolicitud'])->name('solicitudes.create');
         Route::post('/solicitudes', [DocumentoController::class, 'storeSolicitud'])->name('solicitudes.store');
+
+        // Bandeja "Por aprobar" (el sub menú con esta URL da permiso de aprobador)
+        Route::get('/aprobaciones', [DocumentoController::class, 'aprobaciones'])->name('aprobaciones');
 
         // Aprobación y Rechazo
         Route::post('/solicitudes/{id}/aprobar', [DocumentoController::class, 'aprobar'])->name('solicitudes.aprobar');

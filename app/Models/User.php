@@ -40,7 +40,7 @@ class User extends Authenticatable
 
     public function jefeInmediato(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'jefe_inmediato_id');
+        return $this->belongsTo(User::class, 'jefe_inmediato_id')->withTrashed();
     }
 
     public function subordinados(): HasMany
