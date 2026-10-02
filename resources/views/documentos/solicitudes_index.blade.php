@@ -51,6 +51,7 @@
                     <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                         <th class="px-5 py-3">Tipo</th>
                         <th class="px-5 py-3">Documento</th>
+                        <th class="px-5 py-3">Nivel / Subnivel</th>
                         <th class="px-5 py-3">Versión</th>
                         <th class="px-5 py-3">Solicitante</th>
                         <th class="px-5 py-3">Motivo</th>
@@ -86,6 +87,7 @@
                                 <span class="font-mono text-xs font-bold text-slate-800">{{ $s->codigo_documento ?? '—' }}</span>
                                 <p class="text-sm text-slate-700 mt-0.5">{{ $s->nombre_documento }}</p>
                             </td>
+                            <td class="px-5 py-4 text-xs">@include('documentos._nivel', ['item' => $s])</td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex rounded-full bg-slate-100 text-slate-700 px-2.5 py-1 text-[11px] font-mono font-bold">v{{ $s->version }}</span>
                             </td>
@@ -140,7 +142,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-5 py-16 text-center">
+                            <td colspan="9" class="px-5 py-16 text-center">
                                 <i class="fas fa-inbox text-3xl text-slate-300"></i>
                                 <p class="mt-3 text-sm font-bold text-slate-500">{{ $modoAprobacion ? 'No tienes solicitudes pendientes por aprobar' : 'No hay solicitudes registradas' }}</p>
                             </td>

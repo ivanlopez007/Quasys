@@ -31,14 +31,14 @@ class DocumentosSinResponsableController extends Controller
         $documentos = Documento::vigentes()
             ->whereHas('autor', $sinResponsable)
             ->when($anterior, fn ($q) => $q->where('usuario_id', $anterior))
-            ->with(['autor.informacion', 'area', 'plantas'])
+            ->with(['autor.informacion', 'area', 'plantas', 'nivel', 'subnivel'])
             ->orderBy('codigo_documento')
             ->get();
 
         $solicitudes = CambioDocumento::pendientes()
             ->whereHas('solicitante', $sinResponsable)
             ->when($anterior, fn ($q) => $q->where('solicitante_id', $anterior))
-            ->with(['solicitante.informacion', 'tipoSolicitud', 'plantas'])
+            ->with(['solicitante.informacion', 'tipoSolicitud', 'plantas', 'nivel', 'subnivel'])
             ->oldest('fecha_solicitud')
             ->get();
 

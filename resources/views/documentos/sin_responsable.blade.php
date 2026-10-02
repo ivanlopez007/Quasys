@@ -81,6 +81,7 @@
                                     <th class="{{ $th }} w-10"><input type="checkbox" data-todos="documentos" class="{{ $check }}" title="Marcar todos"></th>
                                     <th class="{{ $th }}">Código</th>
                                     <th class="{{ $th }}">Documento</th>
+                                    <th class="{{ $th }}">Nivel / Subnivel</th>
                                     <th class="{{ $th }}">Versión</th>
                                     <th class="{{ $th }}">Plantas</th>
                                     <th class="{{ $th }}">Responsable anterior</th>
@@ -99,6 +100,7 @@
                                             <p class="text-sm font-bold text-slate-800">{{ $doc->nombre_documento }}</p>
                                             <p class="text-[11px] text-slate-400">{{ $doc->area?->area }}</p>
                                         </td>
+                                        <td class="px-5 py-4 text-xs">@include('documentos._nivel', ['item' => $doc])</td>
                                         <td class="px-5 py-4">
                                             <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 px-2.5 py-1 text-[11px] font-bold">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> v{{ $doc->version }}
@@ -150,6 +152,7 @@
                                     <th class="{{ $th }}">Tipo</th>
                                     <th class="{{ $th }}">Código</th>
                                     <th class="{{ $th }}">Documento</th>
+                                    <th class="{{ $th }}">Nivel / Subnivel</th>
                                     <th class="{{ $th }}">Solicitada</th>
                                     <th class="{{ $th }}">Solicitante (dado de baja)</th>
                                 </tr>
@@ -166,6 +169,7 @@
                                             <p class="text-sm text-slate-700">{{ $s->nombre_documento }}</p>
                                             <p class="text-[11px] text-slate-400">v{{ $s->version }}</p>
                                         </td>
+                                        <td class="px-5 py-4 text-xs">@include('documentos._nivel', ['item' => $s])</td>
                                         <td class="px-5 py-4 text-xs text-slate-600 whitespace-nowrap">{{ $s->fecha_solicitud?->format('d/m/Y H:i') }}</td>
                                         <td class="px-5 py-4 text-xs text-slate-600">
                                             <p class="font-semibold">@include('documentos._persona', ['u' => $s->solicitante])</p>

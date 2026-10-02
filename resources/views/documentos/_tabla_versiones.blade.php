@@ -4,6 +4,7 @@
         <thead class="bg-slate-50/50 border-b border-slate-200">
             <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 <th class="px-5 py-3">Versión</th>
+                <th class="px-5 py-3">Nivel / Subnivel</th>
                 <th class="px-5 py-3">Estado</th>
                 <th class="px-5 py-3">Publicación</th>
                 <th class="px-5 py-3">Autor / Aprobó</th>
@@ -18,6 +19,7 @@
                     <td class="px-5 py-4">
                         <span class="inline-flex rounded-full bg-slate-100 text-slate-800 px-2.5 py-1 text-xs font-mono font-black">v{{ $v->version }}</span>
                     </td>
+                    <td class="px-5 py-4 text-xs">@include('documentos._nivel', ['item' => $v])</td>
                     <td class="px-5 py-4">
                         @if ($v->vigente)
                             <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 px-2.5 py-1 text-[11px] font-bold">

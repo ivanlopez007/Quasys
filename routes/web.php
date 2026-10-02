@@ -11,8 +11,9 @@ foreach (config('tenancy.central_domains') as $domain) {
     Route::domain($domain)->group(function () {
 
 
-        Route::middleware('')->controller(TenantController::class)->group(function () {
-
+        Route::controller(TenantController::class)->group(function () {
+            Route::get('/empresas', 'index')->name('central.empresas.index');
+            Route::get('/empresas/disponible', 'disponible')->name('central.empresas.disponible');
             Route::get('/crear-empresa', 'formCrearEmpresa')->name('central.empresas');
             Route::post('/crear-empresa', 'crearEmpresa')->name('central.empresas.post');
         });

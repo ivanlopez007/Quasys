@@ -71,7 +71,7 @@
                         <th class="px-5 py-3">Código</th>
                         <th class="px-5 py-3">Documento</th>
                         <th class="px-5 py-3">Versión</th>
-                        <th class="px-5 py-3">Clasificación</th>
+                        <th class="px-5 py-3">Nivel / Subnivel</th>
                         <th class="px-5 py-3">Área / Localidad</th>
                         <th class="px-5 py-3">Publicado</th>
                         <th class="px-5 py-3">Próx. revisión</th>
@@ -103,8 +103,7 @@
                                 </span>
                             </td>
                             <td class="px-5 py-4 text-xs text-slate-600">
-                                <p class="font-semibold">{{ $doc->nivel?->nombre ?? '—' }}</p>
-                                <p class="text-[11px] text-slate-400">{{ $doc->subnivel?->nombre }}</p>
+                                @include('documentos._nivel', ['item' => $doc])
                             </td>
                             <td class="px-5 py-4 text-xs text-slate-600">
                                 <p class="font-semibold">{{ $doc->area?->area ?? '—' }}</p>

@@ -2,99 +2,160 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Accion;
-use App\Models\EstadoCivil;
-use App\Models\MotivoAntidoping;
-use App\Models\Planta;
-use App\Models\Rol;
 use App\Models\Tenant;
-use App\Models\TipoContrato;
-use App\Models\User;
+use App\Services\AprovisionamientoEmpresaService as Aprovisionamiento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class TenantController extends Controller
 {
+    /** Subdominios que no se pueden usar como empresa. */
+    private const RESERVADOS = ['www', 'admin', 'api', 'app', 'mail', 'central', 'soporte', 'static', 'test'];
+
+    private const MENSAJES_SUBDOMINIO = [
+        'subdominio.required' => 'Escribe un subdominio.',
+        'subdominio.min' => 'El subdominio debe tener al menos 2 caracteres.',
+        'subdominio.max' => 'El subdominio puede tener máximo 30 caracteres.',
+        'subdominio.regex' => 'Solo letras minúsculas, números y guiones (sin empezar ni terminar en guion).',
+        'subdominio.unique' => 'Ese subdominio ya está en uso por otra empresa.',
+        'subdominio.not_in' => 'Ese subdominio está reservado por el sistema.',
+    ];
+
+    public function __construct(private Aprovisionamiento $aprovisionamiento) {}
+
+    public function index()
+    {
+        $empresas = Tenant::with('domains')->get()
+            ->map(function (Tenant $tenant) {
+                $dominio = $tenant->domains->first()?->domain;
+
+                return (object) [
+                    'id' => $tenant->id,
+                    'nombre' => $tenant->name ?? $tenant->id,
+                    'razon_social' => $tenant->razon_social,
+                    'plan' => $tenant->plan,
+                    'dominio' => $dominio,
+                    'url' => $dominio ? Aprovisionamiento::urlDe($dominio) : null,
+                    'base_datos' => $tenant->database()->getName(),
+                    'creada' => $tenant->created_at,
+                    ...$this->estadisticas($tenant),
+                ];
+            })
+            ->sortByDesc('creada')
+            ->values();
+
+        return view('central.empresas.index', [
+            'empresas' => $empresas,
+            'totales' => [
+                'empresas' => $empresas->count(),
+                'usuarios' => $empresas->sum('usuarios'),
+                'documentos' => $empresas->sum('documentos'),
+            ],
+        ]);
+    }
 
     public function formCrearEmpresa()
     {
-        return view('central.crear-empresa');
+        return view('central.empresas.crear', [
+            'dominioCentral' => Aprovisionamiento::dominioCentral(),
+            'urlEjemplo' => Aprovisionamiento::urlDe('__SUB__.' . Aprovisionamiento::dominioCentral()),
+            'planes' => self::planes(),
+        ]);
     }
-
 
     public function crearEmpresa(Request $request)
     {
-        // // 1. Validar la petición recibida desde el formulario Blade
-        // $request->validate([
-        //     'nombre_empresa' => 'required|string|max:255',
-        //     'subdominio'     => 'required|string|max:255|unique:tenants,id',
-        //     'email_admin'    => 'required|email|max:255',
-        //     'password_admin' => 'required|string|min:8|confirmed',
-        //     'plan'           => 'required|string',
-        //     'admin_name'     => 'nullable|string|max:255',
-        // ], [
-        //     'nombre_empresa.required'  => 'El nombre de la empresa es obligatorio.',
-        //     'subdominio.required'      => 'El subdominio es obligatorio.',
-        //     'subdominio.unique'        => 'Este subdominio ya está registrado.',
-        //     'email_admin.required'     => 'El correo electrónico del administrador es obligatorio.',
-        //     'email_admin.email'        => 'El correo electrónico debe ser una dirección válida.',
-        //     'password_admin.required'  => 'La contraseña del administrador es obligatoria.',
-        //     'password_admin.min'       => 'La contraseña debe tener al menos 8 caracteres.',
-        //     'password_admin.confirmed' => 'La confirmación de la contraseña no coincide.',
-        // ]);
+        $request->merge(['subdominio' => strtolower(trim((string) $request->input('subdominio')))]);
+
+        $datos = $request->validate([
+            'nombre_empresa' => ['required', 'string', 'max:150'],
+            'razon_social' => ['nullable', 'string', 'max:200'],
+            'rfc' => ['nullable', 'string', 'max:13'],
+            'subdominio' => $this->reglasSubdominio(),
+            'plan' => ['required', Rule::in(array_keys(self::planes()))],
+            'admin_nombre' => ['required', 'string', 'max:100'],
+            'admin_apellidos' => ['required', 'string', 'max:100'],
+            'email_admin' => ['required', 'email', 'max:255'],
+            'password_admin' => ['required', 'string', 'min:8', 'confirmed'],
+        ], self::MENSAJES_SUBDOMINIO + [
+            'password_admin.confirmed' => 'La confirmación de la contraseña no coincide.',
+        ], [
+            'nombre_empresa' => 'nombre comercial',
+            'admin_nombre' => 'nombre del administrador',
+            'admin_apellidos' => 'apellidos del administrador',
+            'email_admin' => 'correo del administrador',
+            'password_admin' => 'contraseña',
+        ]);
 
         try {
-            $subdomain = $request->input('subdominio');
-            // El dominio completo (ej: transportes.gateops.com)
-            $fullDomain = $subdomain . '.' . config('tenancy.central_domains.0', 'gateops.com');
+            $tenant = $this->aprovisionamiento->crear($datos);
+        } catch (\Throwable $e) {
+            return back()->withInput($request->except('password_admin', 'password_admin_confirmation'))
+                ->with('error', 'No se pudo crear la empresa: ' . $e->getMessage());
+        }
 
-            // Crear tenant
-            $tenant = Tenant::create([
-                'id'   => $subdomain,
-                'plan' => $request->input('plan'),
-                'name' => $request->input('nombre_empresa'),
+        $dominio = $tenant->domains()->value('domain');
+
+        return redirect()->route('central.empresas.index')
+            ->with('creada', [
+                'nombre' => $tenant->name,
+                'url' => Aprovisionamiento::urlDe($dominio) . '/login',
+                'email' => $datos['email_admin'],
             ]);
+    }
 
-            $tenant->domains()->create([
-                'domain' => $fullDomain,
+    /** Comprobación en vivo desde el formulario. */
+    public function disponible(Request $request)
+    {
+        $subdominio = strtolower(trim((string) $request->query('subdominio')));
+        $validador = validator(['subdominio' => $subdominio], ['subdominio' => $this->reglasSubdominio()], self::MENSAJES_SUBDOMINIO);
+
+        return response()->json([
+            'disponible' => $validador->passes(),
+            'mensaje' => $validador->passes() ? 'Disponible' : $validador->errors()->first('subdominio'),
+        ]);
+    }
+
+    private function reglasSubdominio(): array
+    {
+        return [
+            'required', 'string', 'min:2', 'max:30',
+            'regex:/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/',
+            Rule::notIn(self::RESERVADOS),
+            Rule::unique('tenants', 'id'),
+            function ($atributo, $valor, $falla) {
+                if (DB::table('domains')->where('domain', $valor . '.' . Aprovisionamiento::dominioCentral())->exists()) {
+                    $falla('Ese dominio ya está registrado.');
+                }
+            },
+        ];
+    }
+
+    /** Usuarios y documentos de cada empresa; si su base no responde, se marca sin romper la lista. */
+    private function estadisticas(Tenant $tenant): array
+    {
+        try {
+            return $tenant->run(fn () => [
+                'usuarios' => DB::table('users')->whereNull('deleted_at')->count(),
+                'documentos' => DB::table('documentos')->where('vigente', true)->count(),
+                'ok' => true,
             ]);
-
-            tenancy()->initialize($tenant);
-
-            try {
-
-                $rolAdmin = Rol::firstOrCreate([
-                    'rol' => 'Admin'
-                ]);
-
-                $plantaInicial = Planta::firstOrCreate([
-                    'planta' => 'Planta Principal',
-                    'ubicacion' => 'General'
-                ]);
-
-                User::create([
-                    'name'      => $request->input('admin_name', 'Administrador'),
-                    'email'     => $request->input('email_admin'),
-                    'password'  => Hash::make($request->input('password_admin')),
-                    'rol_id'    => $rolAdmin->id,
-                    'planta_id' => $plantaInicial->id,
-                ]);
-            } catch (\Throwable $e) {
-
-                logger()->error($e->getMessage());
-            }
-
-            tenancy()->end();
-
-            return redirect()->route('central.empresas')->with('success', '¡Empresa, Base de Datos, Catálogos y Administrador creados con éxito!');
-        } catch (\Exception $e) {
-            // En caso de fallo, asegura limpiar el contexto activo del Tenant
+        } catch (\Throwable $e) {
             if (tenancy()->initialized) {
                 tenancy()->end();
             }
 
-            return redirect()->back()->withInput()->withErrors(['error' => 'Error en la creación del Tenant: ' . $e->getMessage()]);
+            return ['usuarios' => 0, 'documentos' => 0, 'ok' => false];
         }
+    }
+
+    public static function planes(): array
+    {
+        return [
+            'basico' => ['Básico', 'Hasta 25 usuarios', 'fa-seedling'],
+            'pro' => ['Profesional', 'Usuarios ilimitados', 'fa-rocket'],
+            'empresarial' => ['Empresarial', 'Varias plantas y soporte dedicado', 'fa-building'],
+        ];
     }
 }

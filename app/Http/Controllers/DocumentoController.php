@@ -63,7 +63,7 @@ class DocumentoController extends Controller
         $usuario = Auth::user();
         $esAprobador = CambioDocumento::usuarioEsAprobador($usuario);
 
-        $solicitudes = CambioDocumento::with(['solicitante.informacion', 'aprobador.informacion', 'estado', 'tipoSolicitud', 'documento'])
+        $solicitudes = CambioDocumento::with(['solicitante.informacion', 'aprobador.informacion', 'estado', 'tipoSolicitud', 'documento', 'nivel', 'subnivel'])
             ->when(!$esAprobador, fn($q) => $q->where(fn($w) => $w
                 ->where('solicitante_id', $usuario->id)
                 ->orWhereHas('solicitante', fn($s) => $s->where('jefe_inmediato_id', $usuario->id))))
@@ -87,7 +87,7 @@ class DocumentoController extends Controller
         $usuario = Auth::user();
         $esAprobador = CambioDocumento::usuarioEsAprobador($usuario);
 
-        $solicitudes = CambioDocumento::with(['solicitante.informacion', 'aprobador.informacion', 'estado', 'tipoSolicitud', 'documento'])
+        $solicitudes = CambioDocumento::with(['solicitante.informacion', 'aprobador.informacion', 'estado', 'tipoSolicitud', 'documento', 'nivel', 'subnivel'])
             ->whereHas('estado', fn($q) => $q->where('estado_solicitud', config('documentos.estados.pendiente')))
             ->where('solicitante_id', '!=', $usuario->id)
             ->when(!$esAprobador, fn($q) => $q->whereHas('solicitante', fn($s) => $s->where('jefe_inmediato_id', $usuario->id)))
@@ -215,7 +215,7 @@ class DocumentoController extends Controller
     {
         return Documento::where('codigo_documento', $codigo)
             ->visiblesPara(Auth::user())
-            ->with(['autor.informacion', 'aprobador.informacion', 'cambioOrigen', 'periodoRetencion', 'plantas'])
+            ->with(['autor.informacion', 'aprobador.informacion', 'cambioOrigen', 'periodoRetencion', 'plantas', 'nivel', 'subnivel'])
             ->orderBy('version', 'desc')
             ->get();
     }
